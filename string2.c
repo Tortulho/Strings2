@@ -226,7 +226,7 @@ char* strpllocwrd(char string[], char word[], char* ptr_lim, bool limited) {
 
 /*string pointer locater word
 Dado uma string localiza a palavra e retorna o ponteiro do inicio da palavra (util para modificação da palavra)*/
-inline char* strplocwrd(char string[], char word[], bool limited) {
+ char* strplocwrd(char string[], char word[], bool limited) {
     char* ptr_lim = string + strlen(string) + 1;
     return strpllocwrd(string,word,ptr_lim,limited);
 }
