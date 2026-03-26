@@ -226,7 +226,7 @@ char* strpllocwrd(char string[], char word[], char* ptr_lim, bool limited) {
 
 /*string pointer locater word
 Dado uma string localiza a palavra e retorna o ponteiro do inicio da palavra (util para modificação da palavra)*/
- char* strplocwrd(char string[], char word[], bool limited) {
+inline char* strplocwrd(char string[], char word[], bool limited) {
     char* ptr_lim = string + strlen(string) + 1;
     return strpllocwrd(string,word,ptr_lim,limited);
 }
@@ -421,49 +421,6 @@ char* input_dyn(char stdout_string[]) {
     return (char*) str_input;
 }
 
-/*
-String replace
-
-string -> string que vai ter substituição
-word -> string que vai substituir uma secçao
-count -> quantas vezes vai substituir, -1 para todas as ocorrencias
-limited -> false para qualquer ocorrencia, true para apenas ocorrencias espaçadas
-*/
-void strcrpl(char str[], char word[], size_t count, bool limited) {
-    
-    size_t str_len = strlen(str);
-    size_t wrd_len = strlen(word);
-    char*  sptrlim = str + str_len;
-    size_t rplcount = 0;
-
-    while (rplcount < count) {
-
-        //loc wrd
-        str = strpllocwrd(str,word,sptrlim,limited);
-
-        //se n loc sai
-        if (str == NULL) {
-            return;
-        }
-
-        // faz o replace
-        for (size_t idx = 0; idx < wrd_len; idx++) {
-            str[idx] = word[idx];
-        }
-
-        rplcount++;
-        str += str_len;
-
-    }
-
-    return;
-
-}
-
-inline void strrpl(char str[], char word[], bool limited) {
-    strcrpl(str, word, -1, limited);
-}
-
 void strupp(char str[]) {
     
     size_t len = strlen(str);
@@ -480,16 +437,16 @@ void strlow(char str[]) {
 
 }
 
-inline void strcapitalize(char str[]) {
+void strcapitalize(char str[]) { //INLINE
     *str = toupper(*str);
 }
 
-inline void strlowercase(char str[]) {
-    *str = tolower(*str);
+void strlowercase(char str[]) { //INLINE
+    *str = tolower(*str); 
 }
 
-//APENAS PARA STRINGS ESTATICAS
-inline void strlstrip(char **str) {
+//ONLY FOR STATIC STRINGS (can lose the pointer for the main string (if dynamic))
+void strlstrip(char **str) { //INLINE
 
     while (isspace(**str)) {
         (*str)++;
@@ -508,14 +465,15 @@ void strrstrip(char *str) {
 
 } 
 
-//APENAS PARA STRINGS ESTATICAS
-inline void strstrip(char **str) {
+//ONLY FOR STATIC STRINGS (can lose the pointer for the main string (if dynamic use other pointer to allocated memblock to free whenever u need))
+void strstrip(char **str) { //INLINE
 
     strlstrip(str);
     strrstrip(*str);
 
 }
 
+//Swap lowercase chars to uppercase and uppercase to lowercase
 void strswap(char str[]) {
     size_t str_len = strlen(str);
 
@@ -528,3 +486,165 @@ void strswap(char str[]) {
     }
 
 }
+
+// ONLY FOR DYNAMIC MEMORY STRINGS
+// insert a string at str[start_idx]
+void strinsert(char **str, size_t start_idx, const char *str_to_add) {
+
+    //errors (pointers)
+    if (!str || !*str || !str_to_add) return;
+
+    size_t mainstrlen    = strlen(*str);       
+    size_t strtoaddlen   = strlen(str_to_add);
+
+    if (start_idx > mainstrlen) return;
+
+    // realloc 
+    char *ptr = realloc(*str, (mainstrlen + strtoaddlen + 1)*sizeof(char));
+    if (!ptr) return; //error return
+
+    *str = ptr; //now the string point to the new string
+
+    // move the rest of the string (little slicing) 
+    memmove(
+        *str + start_idx + strtoaddlen,               //dest
+        *str + start_idx,                             //src
+        (mainstrlen - start_idx + 1)*sizeof(char)     //size
+    );
+
+    // now the clean insert
+    memcpy(*str + start_idx, str_to_add, strtoaddlen);
+}
+
+// Remove x (count) strings of removalstr from main string, limited for only whitespaced occurrences 
+void strremove(char **mainstr, size_t count, char *removalstr, bool limited) {
+
+    if (!mainstr || !*mainstr || !removalstr) return;
+
+    char *ptr_de_iteracao = *mainstr;
+    size_t mainstrlen = strlen(*mainstr);
+    size_t rmvstrlen = strlen(removalstr);
+    if (rmvstrlen == 0) return;
+
+    char *ptr_lim     = ptr_de_iteracao + mainstrlen; //proteger o \0 final
+
+
+    while (count > 0) {
+
+        if (ptr_lim <= ptr_de_iteracao) {break;}
+
+        ptr_de_iteracao = strpllocwrd(ptr_de_iteracao, removalstr, ptr_lim, limited);
+
+        if (!ptr_de_iteracao) {break;}
+
+        // move the rest of the string (little slicing) 
+        memmove(
+        ptr_de_iteracao,                                     //dest -> ptr do elemento da palavra a remover
+        ptr_de_iteracao + rmvstrlen,            //src -> ptr depois da palavra a ser removida
+        (ptr_lim - (ptr_de_iteracao + rmvstrlen))       //size -> tamanho do resto da string
+        );
+
+        ptr_lim -= rmvstrlen; //limitar a procura
+
+        
+
+        count--;
+
+    }
+
+    mainstrlen = strlen(*mainstr);
+
+    //BLOCO DE OTIMIZAÇAO DE ESPAÇO DE MEMORIA
+    /* caso nao consiga otimizar ele devolve a string à mesma, só que a ocupar mais tamanho
+    */
+    char* temp = realloc(*mainstr, mainstrlen + 1);
+    if (temp) {*mainstr = temp;}
+
+}
+
+//o return serve apenas para controlo de erros: -1 para ptr NULL, 0 para erro no realloc, 1 para bem sucedido
+//return only for error control: -1 for NULL, 0 for failure on otmization (mem error), 1 for sucesseful operation
+char strotm(char **str) {
+    if (!*str || !str) return -1;
+    char* temp = realloc(*str, strlen(*str) + 1);
+    if (temp) {*str = temp; return 1;} else {return 0;}
+}
+
+//only used for strpop
+static void static_strpop(char *mainstr, size_t start_idx, size_t end_idx) {
+
+    if (!mainstr) return;
+
+    size_t str_len = strlen(mainstr);
+
+    if (start_idx > str_len || end_idx > str_len) {return;}
+    if (start_idx > end_idx) {
+        size_t temp = start_idx;
+        start_idx = end_idx;
+        end_idx = temp;
+    }
+
+    memmove(
+        mainstr + start_idx,
+        mainstr + end_idx,
+        (str_len - end_idx + 1) * sizeof(char) //size: str[end_idx+1] -- str[str_len]
+    );
+
+}
+
+//Pop elements (char) from mainstr and reduce memsize of mainstr
+void strpop(char **mainstr, size_t start_idx, size_t end_idx) {
+
+    if (!*mainstr) return;
+
+    static_strpop(*mainstr,start_idx,end_idx);
+
+    char res;
+
+    for (unsigned int counter = 0; counter < 4; counter++) {
+        res = strotm(mainstr);
+        if (res == 1) {
+            return;
+        }
+    }
+
+    return;
+
+}
+
+//slice string with a pointer
+char* strpslice(char *ptr_start, size_t length) {
+
+    if (!ptr_start) return NULL;
+
+    //control
+    if (strlen(ptr_start) < length) {return NULL;}
+
+    char *strsliced = calloc(length+1,sizeof(char));
+    if (!strsliced) return NULL;
+
+    memcpy(strsliced,ptr_start,length);
+
+    return strsliced;
+
+}
+
+//Return the sliced string that begins on start_idx and end at end_idx
+char* strslice(char* str, size_t start_idx, size_t end_idx) {
+
+    if (!str) return NULL;
+
+    size_t str_len = strlen(str);
+    
+    if (start_idx > str_len || end_idx > str_len) {return NULL;}
+    if (start_idx > end_idx) {
+        size_t temp = start_idx;
+        start_idx = end_idx;
+        end_idx = temp;
+    }
+
+
+    return strpslice(str+(start_idx),end_idx-start_idx);
+
+}
+
