@@ -65,7 +65,7 @@ char* input_dyn(char stdout_string[]);
 void strcrpl(char str[], char word[], size_t count, bool limited);
 
 //string replace
-inline void strrpl(char str[], char word[], bool limited);
+ void strrpl(char str[], char word[], bool limited);
 
 //string upper
 void strupp(char str[]);
