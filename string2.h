@@ -54,18 +54,14 @@ unsigned long strlocwrd(char string[], char word[], bool limited);
 //string counter word
 unsigned long strcntwrd(char string[], char word[],bool limited);
 
+//input_dyn that have a limit of allocating memory and doesnt optimize after execution
 char* input(char stdout_string[], size_t limiter);
 
+//deprecated
 char* input_otm(char stdout_string[]);
 
 //input otimizado com alocaçao de memoria dinamica e rearranjo automatico da memoria para otimização
 char* input_dyn(char stdout_string[]);
-
-//string replace with count (limiter)
-void strcrpl(char str[], char word[], size_t count, bool limited);
-
-//string replace
- void strrpl(char str[], char word[], bool limited);
 
 //string upper
 void strupp(char str[]);
@@ -92,5 +88,27 @@ inline void strstrip(char **str);
 //string swap 
 //lower to upper and upper to lower
 void strswap(char str[]);
+
+// ONLY FOR DYNAMIC MEMORY STRINGS
+/*Given a pointer to a string (double-pointer char), inserts str_to_add at str[start_idx] (same as) str + start_idx*/
+void strinsert(char **str, size_t start_idx, const char *str_to_add);
+
+// Remove x (count) strings of removalstr from main string, limited for only whitespaced occurrences 
+void strremove(char **mainstr, size_t count, char *removalstr, bool limited);
+
+// Reduces the memsize of a string (only useful for strings with more bytes than strlen bytes)
+char strotm(char **str);
+
+//only used for strpop
+static void static_strpop(char *mainstr, size_t start_idx, size_t end_idx);
+
+//Pop elements (char) from mainstr and reduce memsize of mainstr
+void strpop(char **mainstr, size_t start_idx, size_t end_idx);
+
+//slice string with a pointer
+char* strpslice(char *ptr_start, size_t length);
+
+//Return the sliced string that begins on start_idx and end at end_idx
+char* strslice(char* str, size_t start_idx, size_t end_idx);
 
 #endif
